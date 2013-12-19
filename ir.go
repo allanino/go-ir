@@ -25,6 +25,8 @@ import (
     "strings"
     "math"
     "sort"
+    "os"
+    "fmt"
 )
 
 // A Document is composed of a Id and a map Tfidf sending each word to it's tf-idf score in the document.
@@ -59,13 +61,13 @@ func NewEngine() *Engine {
 // The document tf-idf is initialized with simple term frequency.
 // Indeed, we need all documents to compute idf and tf-idf.
 // This computation is done with Vectorize().
-func (eng *Engine) AddDocument(id string, body string) {
+/*func (eng *Engine) AddDocument(id string, body string) {
     doc := new(Document)
     doc.Id = id
     doc.Tfidf = Tf(body) 
 
     eng.Documents = append(eng.Documents, *doc)
-}
+}*/
 
 // Vectorize the Documents in the Engine.
 // This function will populate the maps Idf and Tfidf.
@@ -148,6 +150,10 @@ func (eng *Engine) Query(text string) []SearchResult {
     * Remove whitespaces and stuff.
 */
 func Preprocess(text string) string {
+        file, _ := os.Open("stop_words.txt")
+        reader := bufio.NewReader(file)
+        w, _ := reader.ReadString("\n")
+        fmt.Println(w)
         r1 := regexp.MustCompile("<[^<>]+>") // Remove HTML tags
         r2 :=  regexp.MustCompile("[^A-Za-z]") // Leave only words for tokenization (numbers following words: terminals models)
         r3 :=  regexp.MustCompile("[\\n\\r\\s]+") // Remove whitespaces, newlines and stuff
