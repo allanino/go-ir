@@ -1,7 +1,7 @@
 /* 
-This package allows the creation of a information retrieval engine, which compute cosine similarities between it's documents and a given text query.
+Package go-ir provide a information retrieval engine. 
 
-To compute the cosine similarities it uses the tf-idf vectorization model.
+The engine computes cosine similarities between its documents and a given text query using the tf-idf metric.
 
 Example
 
@@ -24,10 +24,10 @@ import (
     "regexp"
     "strings"
     "math"
-    "sort"
-    "os"
-    "fmt"
+    "encoding/json"
 )
+
+// ======================== Types declarations =======================================
 
 // A Document is composed of a Id and a map Tfidf sending each word to it's tf-idf score in the document.
 // It's vocabulary can be accessed via the keys in the Tfidf map. 
@@ -49,6 +49,8 @@ type SearchResult struct {
     Score float64
 }
 
+// ======================== Engine methods ===========================================
+
 // Create a new Engine struct.
 func NewEngine() *Engine {
     eng := new(Engine)
@@ -61,13 +63,13 @@ func NewEngine() *Engine {
 // The document tf-idf is initialized with simple term frequency.
 // Indeed, we need all documents to compute idf and tf-idf.
 // This computation is done with Vectorize().
-/*func (eng *Engine) AddDocument(id string, body string) {
+func (eng *Engine) AddDocument(id string, body string) {
     doc := new(Document)
     doc.Id = id
     doc.Tfidf = Tf(body) 
 
     eng.Documents = append(eng.Documents, *doc)
-}*/
+}
 
 // Vectorize the Documents in the Engine.
 // This function will populate the maps Idf and Tfidf.
@@ -106,7 +108,7 @@ func (eng *Engine) Vectorize() {
 // It returns an ordered (by score) array of SearchResult. 
 // Only score > 0 are returned.
 func (eng *Engine) Query(text string) []SearchResult {
-    query_vec := Vectorize(text)
+    query_vec :=Tf(text)
 
     // Compute query vector for given search text.
     squared_norm := float64(0)
@@ -142,21 +144,23 @@ func (eng *Engine) Query(text string) []SearchResult {
     return results
 }
 
-// ======================== Auxiliary functions =======================================
+// Return a JSON object for the engine.
+func (eng *Engine) Json() []byte {
+    b,_ := json.MarshalIndent(eng, "", "  ")
+    return b
+} 
+
+// ======================== Auxiliary functions ======================================
 
 /* Pre-process given text following this steps: 
     * Remove all html tags.
     * Remove all non-words, including punctuation.
-    * Remove whitespaces and stuff.
+    * Remove whitespaces.
 */
 func Preprocess(text string) string {
-        file, _ := os.Open("stop_words.txt")
-        reader := bufio.NewReader(file)
-        w, _ := reader.ReadString("\n")
-        fmt.Println(w)
         r1 := regexp.MustCompile("<[^<>]+>") // Remove HTML tags
-        r2 :=  regexp.MustCompile("[^A-Za-z]") // Leave only words for tokenization (numbers following words: terminals models)
-        r3 :=  regexp.MustCompile("[\\n\\r\\s]+") // Remove whitespaces, newlines and stuff
+        r2 :=  regexp.MustCompile("[^a-z\\xE0\\xE1\\xE2\\xE3\\xE4\\xE5\\xE6\\xE7\\xE8\\xE9\\xEA\\xEB\\xEC\\xED\\xEE\\xEF\\xF0\\xF1\\xF2\\xF3\\xF4\\xF5\\xF6\\xF7\\xF8\\xF9\\xFA\\xFB\\xFC\\xFD\\xFE\\xFF]") // Leave only words for tokenization (numbers following words: terminals models)
+        r3 :=  regexp.MustCompile("[\\n\\r\\s]+") // Remove whitespaces
         return strings.Trim(  r3.ReplaceAllString( r2.ReplaceAllString( r1.ReplaceAllString(strings.ToLower(text), " "), " " ), " "), " ")
 }
 
@@ -168,7 +172,7 @@ func Tf(text string) map[string] float64 {
     tf := make(map[string] float64) // Weighted term frequence (tf(word, document))
 
     for _, word := range strings.Split(text, " ") {
-        f[word] = f[word] + 1 
+        f[word] = f[word] + 1
     }
     
     for word, count := range f {
@@ -177,4 +181,3 @@ func Tf(text string) map[string] float64 {
 
     return tf
 }
-// ======================= End ==========================================================

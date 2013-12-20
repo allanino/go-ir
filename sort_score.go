@@ -1,6 +1,8 @@
 package ir
 
-// ======================= Functions implementing a sort.Iterface ======================
+import "sort"
+
+// ===================== Functions implementing a sort interface ======================
 
 // By is the type of a "less" function that defines the ordering.
 type By func(r1, r2 *SearchResult) bool
