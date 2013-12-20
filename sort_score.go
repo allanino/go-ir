@@ -4,7 +4,7 @@ import "sort"
 
 // ===================== Functions implementing a sort interface ======================
 
-// By is the type of a "less" function that defines the ordering.
+// By is the type of a "less" function that defines a ordering for SearchResult.
 type By func(r1, r2 *SearchResult) bool
 
 // Sort function for ordering the search results.

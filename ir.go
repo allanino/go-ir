@@ -5,7 +5,7 @@ The engine computes cosine similarities between its documents and a given text q
 
 Example
 
-One example ranking hmtl documents by relevance to given query:
+One example ranking html documents by relevance to given query:
 
     eng = ir.NewEngine()
     for doc := html_documents {
@@ -29,15 +29,15 @@ import (
 
 // ======================== Types declarations =======================================
 
-// A Document is composed of a Id and a map Tfidf sending each word to it's tf-idf score in the document.
-// It's vocabulary can be accessed via the keys in the Tfidf map. 
+// A Document is composed of an Id and a map Tfidf sending each word to its tf-idf score in the document.
+// Its vocabulary can be accessed via the keys in the Tfidf map. 
 type Document struct {
     Id string // Can be any identifier
     Tfidf map[string] float64 // Calculate once, use in each search
 }
 
 // Each Engine ontains an array of Document and a map Idf. 
-// It's vocabulary can be accessed via the keys in the Idf map. 
+// Its vocabulary can be accessed via the keys in the Idf map. 
 type Engine struct {
     Documents []Document
     Idf map[string] float64 // Calculated once, used in each query
