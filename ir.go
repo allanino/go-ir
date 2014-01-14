@@ -32,21 +32,21 @@ import (
 // A Document is composed of an Id and a map Tfidf sending each word to its tf-idf score in the document.
 // Its vocabulary can be accessed via the keys in the Tfidf map. 
 type Document struct {
-    Id string // Can be any identifier
-    Tfidf map[string] float64 // Calculate once, use in each search
+    Id string                   `json:id"`      //Can be any identifier
+    Tfidf map[string] float64   `json:"tfidf"`  // Calculate once, use in each search
 }
 
 // Each Engine ontains an array of Document and a map Idf. 
 // Its vocabulary can be accessed via the keys in the Idf map. 
 type Engine struct {
-    Documents []Document
-    Idf map[string] float64 // Calculated once, used in each query
+    Documents []Document    `json:"documents"`
+    Idf map[string] float64 `json:"idf"`    // Calculated once, used in each query
 }
 
 // Used to store the cosine of the angle between the document identified by Id and the query.
 type SearchResult struct {
-    Id string
-    Score float64
+    Id string       `json:"id"`
+    Score float64   `json:"score"`
 }
 
 // ======================== Engine methods ===========================================
