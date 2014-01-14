@@ -32,7 +32,7 @@ import (
 // A Document is composed of an Id and a map Tfidf sending each word to its tf-idf score in the document.
 // Its vocabulary can be accessed via the keys in the Tfidf map. 
 type Document struct {
-    Id string                   `json:id"`      //Can be any identifier
+    Id string                   `json:"id"`      //Can be any identifier
     Tfidf map[string] float64   `json:"tfidf"`  // Calculate once, use in each search
 }
 
