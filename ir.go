@@ -124,7 +124,7 @@ func (eng *Engine) Vectorize() {
 // It returns an ordered (by score) array of SearchResult. 
 // Only score > 0 are returned.
 func (eng *Engine) Query(text string) []SearchResult {
-    query_vec := Tf(text, eng.stop_words)
+    query_vec := Tf(strings.ToLower(text), eng.stop_words)
 
     // Compute query vector for given search text.
     squared_norm := float64(0)
