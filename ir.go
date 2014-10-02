@@ -7,7 +7,7 @@ Example
 
 One example ranking html documents by relevance to given query:
 
-    eng = ir.NewEngine()
+    eng :s= ir.NewEngine()
     for doc := html_documents {
         eng.AddDocument(doc.Url, doc.Html)
     }
@@ -42,6 +42,7 @@ type Engine struct {
     Documents []Document    `json:"documents"`
     Idf map[string] float64 `json:"idf"`    // Calculated once, used in each query
     stop_words []string
+    regex_remove *regexp.Regexp // Anything matched will be removed from document (use wisely)
 }
 
 // Used to store the cosine of the angle between the document identified by Id and the query.
@@ -52,27 +53,35 @@ type SearchResult struct {
 // ======================== Engine methods ===========================================
 
 // Create a new Engine struct.
-// The only argument is a string to specify which stop words list to use. 
-// There are currently two options: "english" (or "en") and "portuguese" (or "pt").
-// Anything else and the engine will not use any stop words. 
-func NewEngine(stop_words_language string) *Engine {
+// We can pass up to two optional arguments:
+// - a string "english" (or "en") or "portuguese" (or "pt") which specifies which stop words set to use.
+// - a *regexp.Regexp with a pattern of things to remove from document before processing. For example, 
+//   passing regexp.MustCompile("[^a-z]") means the algorithm will remove any characters but lowercase ones.
+func NewEngine(options ...interface{}) *Engine {
     eng := new(Engine)
     eng.Documents = make([]Document, 0)
     eng.Idf = make(map[string] float64)
-    eng.SetStopWords(stop_words_language)
-    return eng
-}
+    eng.stop_words = []string{""}
+    eng.regex_remove = regexp.MustCompile("[^a-z]")
 
-// Set the stop words list to be used
-func (eng *Engine) SetStopWords(stop_words_language string) {
-    switch stop_words_language {
-    case "en", "english":
-        eng.stop_words = ENGLISH_STOP_WORDS
-    case "pt", "portuguese":
-        eng.stop_words = PORTUGUESE_STOP_WORDS
-    default:
-        eng.stop_words = []string{""}
+    // Look arguments for:
+    //  - a string: language of stop words to use
+    //  - a Regex: pattern characters to be removed before processing document
+    for _, option := range options {
+      switch value := option.(type) {
+        case string:
+            switch value {
+            case "en", "english":
+                eng.stop_words = ENGLISH_STOP_WORDS
+            case "pt", "portuguese":
+                eng.stop_words = PORTUGUESE_STOP_WORDS
+            }
+        case *regexp.Regexp:
+          eng.regex_remove = value
+      }
     }
+
+    return eng
 }
 
 // Add new document to the Engine.
@@ -82,7 +91,7 @@ func (eng *Engine) SetStopWords(stop_words_language string) {
 func (eng *Engine) AddDocument(id string, body string) {
     doc := new(Document)
     doc.Id = id
-    doc.Tfidf = Tf(body, eng.stop_words) 
+    doc.Tfidf = eng.tf(body) 
 
     eng.Documents = append(eng.Documents, *doc)
 }
@@ -124,7 +133,7 @@ func (eng *Engine) Vectorize() {
 // It returns an ordered (by score) array of SearchResult. 
 // Only score > 0 are returned.
 func (eng *Engine) Query(text string) []SearchResult {
-    query_vec := Tf(strings.ToLower(text), eng.stop_words)
+    query_vec := eng.tf(strings.ToLower(text))
 
     // Compute query vector for given search text.
     squared_norm := float64(0)
@@ -166,31 +175,33 @@ func (eng *Engine) Json() []byte {
     return b
 } 
 
-// ======================== Auxiliary functions ======================================
+// ======================== Auxiliary unexported methods ======================================
 
 /* Pre-process given text following this steps: 
     * Remove all html tags.
-    * Remove all non-words, including punctuation.
-    * Remove stop words
+    * Remove all non-words, including punctuation (or other pattern given by the user).
+    * Remove stop words.
     * Remove whitespaces.
 */
-func Preprocess(text string, stop_words []string) string {
+func (eng *Engine) preprocess(text string) string {
         text = " " + text + " " // Add spaces so that we can find all stop words later
-        r1 := regexp.MustCompile("<[^<>]+>") // Remove HTML tags
-        r2 :=  regexp.MustCompile("[^a-z\\xE0\\xE1\\xE2\\xE3\\xE4\\xE5\\xE6\\xE7\\xE8\\xE9\\xEA\\xEB\\xEC\\xED\\xEE\\xEF\\xF0\\xF1\\xF2\\xF3\\xF4\\xF5\\xF6\\xF7\\xF8\\xF9\\xFA\\xFB\\xFC\\xFD\\xFE\\xFF]") // Leave only words for tokenization (numbers following words: terminals models)
-        r3 :=  regexp.MustCompile("[\\n\\r\\s]+") // Remove whitespaces
-        text = r2.ReplaceAllString( r1.ReplaceAllString(strings.ToLower(text), " "), " " )
+        reg_remove_tags := regexp.MustCompile("<[^<>]+>") // Remove HTML tags
+        reg_remove_whitespaces :=  regexp.MustCompile("[\\n\\r\\s]+") // Remove whitespaces
+        
+        // Send text to lower case, remove HTML tags and then remove anything matching eng.regex_remove
+        text = eng.regex_remove.ReplaceAllString( reg_remove_tags.ReplaceAllString(strings.ToLower(text), " "), " " )
+        
         // Remove stop words
-        for _, word := range stop_words {
+        for _, word := range eng.stop_words {
             text = strings.Replace(text, " " + word + " ", " ",-1)
         }    
-        text = strings.Trim(  r3.ReplaceAllString( text, " "), " ")
+        text = strings.Trim(  reg_remove_whitespaces.ReplaceAllString( text, " "), " ")
         return text
 }
 
 // Return a map with weighted term frequencies for given text.
-func Tf(text string, stop_words []string) map[string] float64 {
-    text = Preprocess(text, stop_words)
+func (eng *Engine) tf(text string) map[string] float64 {
+    text = eng.preprocess(text)
 
     f := make(map[string] int) // Raw term frequence (f(word, document))
     tf := make(map[string] float64) // Weighted term frequence (tf(word, document))
