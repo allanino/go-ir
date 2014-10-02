@@ -7,7 +7,7 @@ Example
 
 One example ranking html documents by relevance to given query:
 
-    eng :s= ir.NewEngine()
+    eng := ir.NewEngine()
     for doc := html_documents {
         eng.AddDocument(doc.Url, doc.Html)
     }
