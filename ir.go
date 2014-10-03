@@ -187,10 +187,16 @@ func (eng *Engine) preprocess(text string) string {
         text = " " + text + " " // Add spaces so that we can find all stop words later
         reg_remove_tags := regexp.MustCompile("<[^<>]+>") // Remove HTML tags
         reg_remove_whitespaces :=  regexp.MustCompile("[\\n\\r\\s]+") // Remove whitespaces
+        reg_remove_trailing_special :=  regexp.MustCompile("\\.*\\s+|-*\\s+|,*\\s+") // Remove trailing dots, commas and hyphens
+        reg_remove_leading_special :=  regexp.MustCompile("\\s+\\.*|\\s+-*|\\s+,*") // Remove trailing dots, commas and hyphens
         
         // Send text to lower case, remove HTML tags and then remove anything matching eng.regex_remove
         text = eng.regex_remove.ReplaceAllString( reg_remove_tags.ReplaceAllString(strings.ToLower(text), " "), " " )
         
+        // removing trailing and leading dots, commas and hyphens
+        text = reg_remove_trailing_special.ReplaceAllString(text, " ")
+        text = reg_remove_leading_special.ReplaceAllString(text, " ")
+
         // Remove stop words
         for _, word := range eng.stop_words {
             text = strings.Replace(text, " " + word + " ", " ",-1)
