@@ -1,5 +1,4 @@
-Go Information Retrieval
-========================
+# Go Information Retrieval
 
 A minimal Go package providing a information retrieval engine. 
 
@@ -8,3 +7,7 @@ A minimal Go package providing a information retrieval engine.
 The engine computes cosine similarities between its documents and text queries using a [tf-idf][1] (term frequency–inverse document frequency) model.
 
 [1]:http://en.wikipedia.org/wiki/Tf%E2%80%93idf
+
+## License
+
+This project is released under the [MIT License](https://opensource.org/licenses/MIT).
